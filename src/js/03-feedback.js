@@ -1,43 +1,50 @@
 import throttle from 'lodash.throttle';
 
-const form = document.querySelector('form');
-const input = document.querySelector('input');
-const textarea = document.querySelector('textarea');
+import throttle from 'lodash.throttle';
 
-const inputValues = {
-  email: '',
-  message: '',
-};
+const formEl = document.querySelector('.feedback-form');
+const nameEl = formEl.querySelector('input');
+const messageEl = formEl.querySelector('textarea');
+const LOCAL_KEY = 'feedback-form-state';
 
-form.addEventListener('submit', clearAll);
-input.addEventListener('input', typeEmail);
-form.addEventListener('input', throttle(localStorageRenew, 500));
-textarea.addEventListener('input', typeMessage);
-window.addEventListener('load', pageLoad);
+formEl.addEventListener('submit', onFormSubmit);
+formEl.addEventListener('input', throttle(onInputChanges, 500));
 
-function typeEmail(event) {
-  inputValues.email = event.currentTarget.value;
+onPageReload();
+// запис
+function onInputChanges() {
+  const email = nameEl.value;
+  const message = messageEl.value;
+
+  const formData = {
+    email,
+    message,
+  };
+
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(formData));
 }
+// читання
+function onFormSubmit(e) {
+  e.preventDefault();
 
-function typeMessage(event) {
-  inputValues.message = event.currentTarget.value;
+  const formData = {
+    email: e.currentTarget.elements.email.value,
+    message: e.currentTarget.elements.message.value,
+  };
+
+  console.log('onFormSubmit : formData', formData);
+
+  e.currentTarget.reset();
+
+  localStorage.removeItem(LOCAL_KEY);
 }
+// перезагрузка
+function onPageReload() {
+  const savedData = localStorage.getItem(LOCAL_KEY);
+  const parsedData = JSON.parse(savedData);
 
-function localStorageRenew() {
-  localStorage.setItem('feedback-form-state', JSON.stringify(inputValues));
-}
-
-function pageLoad() {
-  const lastTyped = JSON.parse(localStorage.getItem('feedback-form-state'));
-  if (lastTyped !== null) {
-    input.value = lastTyped.email;
-    textarea.value = lastTyped.message;
+  if (parsedData) {
+    nameEl.value = parsedData.email;
+    messageEl.value = parsedData.message;
   }
-}
-
-function clearAll(event) {
-  event.preventDefault();
-  console.log(JSON.parse(localStorage.getItem('feedback-form-state')));
-  localStorage.removeItem('feedback-form-state');
-  event.currentTarget.reset();
 }
